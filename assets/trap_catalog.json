@@ -1,0 +1,8 @@
+[
+    {
+        "name": "BOMB",
+        "effect": "instant_penalty",
+        "penalty": 3,
+        "sprite_path": "assets/food/bomb.png"
+    }
+]

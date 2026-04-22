@@ -1,0 +1,32 @@
+[
+  {
+    "name": "banana",
+    "food_group": "protective",
+    "sprite_path": "assets/food_groups/protective/fruits/banana.png"
+  },
+  {
+    "name": "carrot",
+    "food_group": "protective",
+    "sprite_path": "assets/food_groups/protective/vegetables/carrot.png"
+  },
+  {
+    "name": "taro",
+    "food_group": "energy",
+    "sprite_path": "assets/food_groups/energy/taro/taro.png"
+  },
+  {
+    "name": "rice",
+    "food_group": "energy",
+    "sprite_path": "assets/food_groups/energy/rice/rice_bowl.png"
+  },
+  {
+    "name": "fish",
+    "food_group": "body_building",
+    "sprite_path": "assets/food_groups/body_building/fish/fish.png"
+  },
+  {
+    "name": "beans",
+    "food_group": "body_building",
+    "sprite_path": "assets/food_groups/body_building/beans/beans.png"
+  }
+]
