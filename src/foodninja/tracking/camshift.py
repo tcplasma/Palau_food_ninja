@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from typing import Tuple, Optional
-from foodninja.core.models import Measurement, TrackingState
+from foodninja.core.models import CovarianceState, Measurement, SearchWindow, TrackingState
 
 class CamShiftModule:
     """
@@ -34,9 +34,11 @@ class CamShiftModule:
         self.roi_hist = cv2.calcHist([hsv_roi], [0, 1], mask, [180, 256], [0, 180, 0, 256])
         cv2.normalize(self.roi_hist, self.roi_hist, 0, 255, cv2.NORM_MINMAX)
 
-    def measure(self, frame: np.ndarray, predicted_state: TrackingState, uncertainty_trace: float) -> Optional[Measurement]:
+    def measure(self, frame: np.ndarray, predicted_state: TrackingState, uncertainty_trace: float, velocity_lookahead: float = 0.0, dt: float = 1.0/60.0) -> Optional[Measurement]:
         """
         Executes CamShift with advanced confidence scoring and spatial prior.
+        velocity_lookahead: fraction of (vx*dt, vy*dt) to shift the search window
+                            center ahead of the Kalman prediction.
         """
         if self.roi_hist is None:
             return None
@@ -52,13 +54,15 @@ class CamShiftModule:
         dst = cv2.morphologyEx(dst, cv2.MORPH_CLOSE, self.kernel_close)
         _, dst = cv2.threshold(dst, 10, 255, cv2.THRESH_TOZERO) # Loosened from 20
 
-        # 3. Calculate dynamic search window
+        # 3. Calculate dynamic search window, optionally shifted along velocity
+        search_cx = predicted_state.cx + velocity_lookahead * predicted_state.vx * dt
+        search_cy = predicted_state.cy + velocity_lookahead * predicted_state.vy * dt
         growth = self.base_window_add + self.k_uncertainty * (uncertainty_trace ** 0.5)
         sw_w = max(predicted_state.width, 40) + growth
         sw_h = max(predicted_state.height, 40) + growth
         
-        sw_x = int(predicted_state.cx - sw_w / 2)
-        sw_y = int(predicted_state.cy - sw_h / 2)
+        sw_x = int(search_cx - sw_w / 2)
+        sw_y = int(search_cy - sw_h / 2)
         
         fh, fw = frame.shape[:2]
         track_window = (
@@ -101,8 +105,8 @@ class CamShiftModule:
             confidence = (0.3 * mean_score) + (0.4 * peak_score) + (0.3 * area_ratio)
             
             # 5. Spatial Prior Penalty (Center Penalty)
-            # Distance from prediction normalized by search window size
-            dist_sq = ((cx - predicted_state.cx)**2 + (cy - predicted_state.cy)**2)
+            # Distance from velocity-shifted prediction center
+            dist_sq = ((cx - search_cx)**2 + (cy - search_cy)**2)
             # Soften penalty: use larger sigma
             sigma_sq = (sw_w * 0.7)**2 
             spatial_penalty = np.exp(-dist_sq / (2 * sigma_sq))
@@ -142,3 +146,24 @@ class CamShiftModule:
         # EMA update
         self.roi_hist = (1 - alpha) * self.roi_hist + alpha * new_hist
         cv2.normalize(self.roi_hist, self.roi_hist, 0, 255, cv2.NORM_MINMAX)
+
+
+def build_search_window(
+    state: TrackingState,
+    covariance: CovarianceState,
+    config,
+) -> SearchWindow:
+    """Build a CamShift search window sized by Kalman uncertainty.
+
+    Used by the standalone tracking demo (``tracking_demo.py``).
+    """
+    uncertainty = (covariance.pos_x_var + covariance.pos_y_var) ** 0.5
+    growth = config.base_search_window + config.search_window_scale * uncertainty
+    w = max(state.width, 40) + growth
+    h = max(state.height, 40) + growth
+    return SearchWindow(
+        x=state.cx - w / 2,
+        y=state.cy - h / 2,
+        width=w,
+        height=h,
+    )

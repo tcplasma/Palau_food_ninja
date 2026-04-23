@@ -69,6 +69,7 @@ class VoiceAnnouncer:
                         continue
                 
                 self.cached_sounds[file_path].play()
+                time.sleep(0.01) # Small breathe for the audio mixer
                 
             except queue.Empty:
                 continue
@@ -86,10 +87,14 @@ class SfxEngine:
     """
     def __init__(self):
         if not pygame.mixer.get_init():
-            pygame.mixer.pre_init(44100, -16, 2, 512) # Use 2 channels for stereo
+            pygame.mixer.pre_init(44100, -16, 2, 512)
+        
+        # Increase simultaneous channels to avoid skipping sounds
+        pygame.mixer.set_num_channels(16)
             
         self.correct_sound = self._generate_slice_sound(880, 220, 0.15)
-        self.wrong_sound = self._generate_slice_sound(220, 110, 0.2)
+        self.wrong_sound = self._generate_slice_sound(440, 110, 0.25)
+        self.bomb_sound = self._generate_explosion_sound(0.4)
 
     def _generate_slice_sound(self, start_freq, end_freq, duration, sample_rate=44100):
         t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
@@ -108,8 +113,23 @@ class SfxEngine:
         
         return pygame.sndarray.make_sound(stereo_data)
 
+    def _generate_explosion_sound(self, duration, sample_rate=44100):
+        t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+        # White noise
+        noise = np.random.uniform(-1, 1, len(t))
+        # Low pass filter effect via frequency roll-off
+        fade_out = np.exp(-5 * t / duration)
+        wave = noise * fade_out
+        audio_data = (wave * 32767).astype(np.int16)
+        stereo_data = np.repeat(audio_data[:, np.newaxis], 2, axis=1)
+        return pygame.sndarray.make_sound(stereo_data)
+
     def play_correct(self):
         self.correct_sound.play()
 
     def play_wrong(self):
         self.wrong_sound.play()
+
+    def play_bomb(self):
+        self.bomb_sound.stop() # Ensure it restarts from the beginning
+        self.bomb_sound.play()

@@ -11,14 +11,16 @@ class ScoreBoard:
     history: list[str] = field(default_factory=list)
 
     def register_hit(self, group: FoodGroup) -> None:
-        if group == FoodGroup.BOMB:
-            # Slicing a bomb is a major penalty
-            self.wrong_hits += 3
-            self.history.append("bomb_hit")
-        elif group == self.current_target_group:
+        """Register a food slice. Bombs must use register_bomb_hit() instead."""
+        if group == self.current_target_group:
             self.correct_hits += 1
             self.history.append(f"correct:{group.value}")
         else:
             self.wrong_hits += 1
             self.history.append(f"wrong:{group.value}")
+
+    def register_bomb_hit(self, penalty: int = 3) -> None:
+        """Register a bomb hit with the given penalty score."""
+        self.wrong_hits += penalty
+        self.history.append("bomb_hit")
 

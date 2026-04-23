@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -96,8 +96,8 @@ class TrackingStepResult:
     lost_count: int
     accepted_measurement: bool
     frames_since_reinit: int
-    confidence: float
-    trajectory: list[tuple[float, float]] # Last N positions for visual effect
+    confidence: float = 0.0
+    trajectory: list[tuple[float, float]] = field(default_factory=list)
 
 
 @dataclass(slots=True)

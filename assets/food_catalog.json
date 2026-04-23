@@ -21,9 +21,9 @@
     { "name": "Oatmeal", "food_group": "energy", "sprite_path": "assets/food/energy/oatmeal.png" },
     { "name": "Rice", "food_group": "energy", "sprite_path": "assets/food/energy/rice.png" },
     { "name": "Sweet Potato", "food_group": "energy", "sprite_path": "assets/food/energy/sweetpotato.png" },
-    { "name": "Oil", "food_group": "energy", "sprite_path": "assets/food/oil.png" },
-    { "name": "Olive Oil", "food_group": "energy", "sprite_path": "assets/food/olive oil.png" },
-    { "name": "Sugar", "food_group": "energy", "sprite_path": "assets/food/Sugar Illustration.png" },
+    { "name": "Oil", "food_group": "energy", "sprite_path": "assets/food/energy/oil.png" },
+    { "name": "Olive Oil", "food_group": "energy", "sprite_path": "assets/food/energy/olive oil.png" },
+    { "name": "Sugar", "food_group": "energy", "sprite_path": "assets/food/energy/sugar.png" },
 
     { "name": "Beef", "food_group": "body_building", "sprite_path": "assets/food/body_building/beef.png" },
     { "name": "Chicken", "food_group": "body_building", "sprite_path": "assets/food/body_building/chicken.png" },
@@ -34,6 +34,6 @@
     { "name": "Pork", "food_group": "body_building", "sprite_path": "assets/food/body_building/pork.png" },
     { "name": "Soy Milk", "food_group": "body_building", "sprite_path": "assets/food/body_building/soy milk.png" },
     { "name": "Tofu", "food_group": "body_building", "sprite_path": "assets/food/body_building/tofu.png" },
-    { "name": "Miso", "food_group": "body_building", "sprite_path": "assets/food/miso.png" },
-    { "name": "Cheese", "food_group": "body_building", "sprite_path": "assets/food/protective/cheese.png" }
+    { "name": "Miso", "food_group": "body_building", "sprite_path": "assets/food/body_building/miso.png" },
+    { "name": "Cheese", "food_group": "body_building", "sprite_path": "assets/food/body_building/cheese.png" }
 ]

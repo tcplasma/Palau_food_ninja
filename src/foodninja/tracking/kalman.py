@@ -1,3 +1,9 @@
+"""
+Deprecated: lightweight scaffold predictor retained for demo/test compatibility.
+
+The main game uses ``kalman_filter.py`` (full 6-state Kalman with numpy matrices).
+This module is only imported by ``demo/tracking_demo.py``.
+"""
 from foodninja.core.models import CovarianceState, TrackingState
 
 

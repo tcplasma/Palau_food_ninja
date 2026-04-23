@@ -1,7 +1,7 @@
 import math
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
-from foodninja.core.models import SpawnItem, TrackingState
+from foodninja.core.models import SpawnItem, TrackingState, TrackMode
 
 @dataclass(slots=True)
 class SlicedResult:
@@ -18,24 +18,43 @@ class SliceEngine:
         self.slice_threshold = slice_threshold
         self.previous_pos: Optional[Tuple[float, float]] = None
 
-    def process_frame(self, hand_state: TrackingState, active_items: List[SpawnItem]) -> List[SlicedResult]:
+    def reset(self) -> None:
+        """Reset slice state (call on game restart or tracking loss)."""
+        self.previous_pos = None
+
+    def process_frame(
+        self,
+        hand_state: TrackingState,
+        active_items: List[SpawnItem],
+        tracking_mode: TrackMode = TrackMode.TRACKING,
+    ) -> List[SlicedResult]:
         """
-        Checks if the movement from previous_pos to current hand_state 
+        Checks if the movement from previous_pos to current hand_state
         intersects with any active items.
+
+        LOST mode: Kalman prediction is still valid for ~10-15 frames —
+                   allow slice detection so fast slicing gestures (which
+                   briefly cause LOST) can still register hits.
+        REINIT mode: position is garbage (0,0) — clear trajectory and bail.
         """
+        # Only block on full REINIT — position is genuinely unknown.
+        if tracking_mode == TrackMode.REINIT:
+            self.previous_pos = None
+            return []
+
         current_pos = (hand_state.cx, hand_state.cy)
         sliced_items: List[SlicedResult] = []
-        
-        # Use the tracker's dynamic bounding box size to determine slice thickness
-        dynamic_radius = max(30.0, hand_state.width / 2.0)
+
+        # Sprite is 80×80 → geometric radius 40px. Add 5px tolerance.
+        # Use tracked bounding box width when available and large enough.
+        HIT_RADIUS_MIN = 45.0
+        dynamic_radius = max(HIT_RADIUS_MIN, hand_state.width / 2.0)
 
         if self.previous_pos is not None:
             for item in active_items:
                 if self._check_intersection(self.previous_pos, current_pos, item, dynamic_radius):
-                    # Calculate angle of the slice trajectory
-                    angle = math.atan2(current_pos[1] - self.previous_pos[1], 
+                    angle = math.atan2(current_pos[1] - self.previous_pos[1],
                                        current_pos[0] - self.previous_pos[0])
-                    
                     sliced_items.append(SlicedResult(
                         item=item,
                         slice_point=current_pos,

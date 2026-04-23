@@ -14,6 +14,7 @@ def test_tracking_pipeline_enters_lost_after_rejection() -> None:
         position_variance_x=4.0,
         position_variance_y=4.0,
         lost_count=0,
+        frames_since_reinit=0,
         config=config,
     )
     assert result.mode == TrackMode.LOST
@@ -30,6 +31,7 @@ def test_tracking_pipeline_enters_reinit_after_repeated_loss() -> None:
         position_variance_x=4.0,
         position_variance_y=4.0,
         lost_count=2,
+        frames_since_reinit=0,
         config=config,
     )
     assert result.mode == TrackMode.REINIT

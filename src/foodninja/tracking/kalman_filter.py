@@ -7,16 +7,10 @@ class KalmanFilterModule:
     State x = [cx, cy, vx, vy, w, h]^T
     Measurement z = [cx, cy, w, h]^T
     """
-    def __init__(self, dt: float = 1.0/30.0):
+    def __init__(self, dt: float = 1.0/60.0):
         # State transition matrix (Constant Velocity Model)
-        self.F = np.array([
-            [1, 0, dt, 0, 0, 0],
-            [0, 1, 0, dt, 0, 0],
-            [0, 0, 1,  0, 0, 0],
-            [0, 0, 0,  1, 0, 0],
-            [0, 0, 0,  0, 1, 0],
-            [0, 0, 0,  0, 0, 1]
-        ], dtype=np.float32)
+        self._dt = dt
+        self.F = self._make_F(dt)
 
         # Measurement matrix (Maps state to measurement)
         self.H = np.array([
@@ -26,16 +20,34 @@ class KalmanFilterModule:
             [0, 0, 0, 0, 0, 1]
         ], dtype=np.float32)
 
-        # Process noise covariance Q (Reduced for higher trust in motion model)
-        self.Q = np.eye(6, dtype=np.float32) * 0.01 
-        self.Q[2:4, 2:4] *= 2.0 # Slightly higher uncertainty in velocity
+        # Process noise covariance Q.
+        # Position: small (Kalman smooths it). Velocity: large so fast hand
+        # movements don't starve the gating window. Size: moderate.
+        self.Q = np.diag([1.0, 1.0, 800.0, 800.0, 4.0, 4.0]).astype(np.float32)
 
-        # Measurement noise covariance R (Balanced for 10-frame high-frequency logic)
+        # Measurement noise covariance R
         self.R = np.eye(4, dtype=np.float32) * 40.0
 
         # State and Covariance initialization
         self.x = np.zeros((6, 1), dtype=np.float32)
         self.P = np.eye(6, dtype=np.float32) * 100.0
+
+    @staticmethod
+    def _make_F(dt: float) -> np.ndarray:
+        return np.array([
+            [1, 0, dt, 0, 0, 0],
+            [0, 1, 0, dt, 0, 0],
+            [0, 0, 1,  0, 0, 0],
+            [0, 0, 0,  1, 0, 0],
+            [0, 0, 0,  0, 1, 0],
+            [0, 0, 0,  0, 0, 1]
+        ], dtype=np.float32)
+
+    def update_dt(self, dt: float) -> None:
+        """Update F with the actual measured frame dt for accurate prediction."""
+        if abs(dt - self._dt) > 1e-4:
+            self._dt = dt
+            self.F = self._make_F(dt)
 
     def initialize(self, initial_state: np.ndarray):
         """Reinitialize state x and covariance P."""
