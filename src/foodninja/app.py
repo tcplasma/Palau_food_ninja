@@ -85,8 +85,9 @@ class FoodNinjaGame:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
-                    running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_q or event.key == pygame.K_ESCAPE:
+                        running = False
 
             # 2. Camera & tracking
             dt = self.clock.tick(60) / 1000.0

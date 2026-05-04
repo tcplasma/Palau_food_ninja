@@ -1,0 +1,22 @@
+{
+  "graphs": [
+    {
+      "graph": "KalmanPredict",
+      "model_path": "benchmark_results\\kalman_predict.onnx",
+      "model_size_kb": 0.8,
+      "numpy_mean_ms": 0.0065,
+      "onnx_mean_ms": 0.0191,
+      "speedup_x": 0.34,
+      "provider": "CPUExecutionProvider"
+    },
+    {
+      "graph": "CamShiftLookup",
+      "model_path": "benchmark_results\\camshift_lookup.onnx",
+      "model_size_kb": 0.6,
+      "numpy_mean_ms": 0.0458,
+      "onnx_mean_ms": 0.338,
+      "speedup_x": 0.14,
+      "provider": "CPUExecutionProvider"
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import numpy as np
 from typing import Optional, Tuple
 from collections import deque
 import time
-from foodninja.core.models import TrackMode, TrackingState, Measurement, TrackingStepResult
+from foodninja.core.models import TrackMode, TrackingState, Measurement, TrackingStepResult, ProfilingContext
 from foodninja.core.utils import get_resource_path
 from foodninja.config import TrackingConfig
 from .kalman_filter import KalmanFilterModule
@@ -17,8 +17,9 @@ class HandTracker:
     Kalman Predict -> CamShift Measure -> Gating -> Kalman Update -> State Machine Management.
     Includes periodic Re-initialization via MediaPipe.
     """
-    def __init__(self, config: TrackingConfig):
+    def __init__(self, config: TrackingConfig, profiling_enabled: bool = False):
         self.config = config
+        self._profiling_enabled = profiling_enabled
         self.mode = TrackMode.REINIT
         self.kf = KalmanFilterModule()
         self.camshift = CamShiftModule()
@@ -40,6 +41,7 @@ class HandTracker:
         dt: actual elapsed time since last frame — keeps Kalman F accurate.
         """
         self.kf.update_dt(max(0.005, min(dt, 0.1)))
+        _t0 = time.perf_counter_ns() if self._profiling_enabled else 0
 
         # ── 1. Check for MediaPipe result from background thread ──────────────
         new_ready, ground_truth = self.detector.get_latest_result()
@@ -89,19 +91,24 @@ class HandTracker:
             )
 
         # ── 3. Kalman Prediction ──────────────────────────────────────────────
+        _t_kp0 = time.perf_counter_ns() if self._profiling_enabled else 0
         x_pred, P_pred = self.kf.predict()
         pred_state = TrackingState.from_array(x_pred)
+        _t_kp1 = time.perf_counter_ns() if self._profiling_enabled else 0
 
         # ── 4. CamShift Measurement ───────────────────────────────────────────
         trace_p = np.trace(P_pred[:2, :2])
+        _t_cs0 = time.perf_counter_ns() if self._profiling_enabled else 0
         z_t = self.camshift.measure(
             frame, pred_state, trace_p,
             velocity_lookahead=self.config.velocity_lookahead_factor,
             dt=self.kf._dt,
         )
+        _t_cs1 = time.perf_counter_ns() if self._profiling_enabled else 0
 
         # ── 5. Gating + Kalman Update ─────────────────────────────────────────
         accepted = False
+        _t_g0 = time.perf_counter_ns() if self._profiling_enabled else 0
         if z_t is not None:
             accepted = accept_measurement(
                 predicted_state=pred_state,
@@ -110,7 +117,9 @@ class HandTracker:
                 position_variance_y=P_pred[1, 1],
                 config=self.config,
             )
+        _t_g1 = time.perf_counter_ns() if self._profiling_enabled else 0
 
+        _t_ku0 = time.perf_counter_ns() if self._profiling_enabled else 0
         if accepted:
             x_upd, _ = self.kf.update(z_t.to_array())
             self.current_state = TrackingState.from_array(x_upd)
@@ -127,8 +136,10 @@ class HandTracker:
                 self.mode = TrackMode.REINIT
             else:
                 self.mode = TrackMode.LOST
+        _t_ku1 = time.perf_counter_ns() if self._profiling_enabled else 0
 
         # ── 6. Smooth for visualization (One Euro Filter) ─────────────────────
+        _t_oe0 = time.perf_counter_ns() if self._profiling_enabled else 0
         if self.current_state:
             ts = time.time()
             smooth_x = self.filter_x.update(self.current_state.cx, ts)
@@ -139,6 +150,19 @@ class HandTracker:
                 width=self.current_state.width, height=self.current_state.height,
             )
             self.history.append((self.visual_state.cx, self.visual_state.cy))
+        _t_oe1 = time.perf_counter_ns() if self._profiling_enabled else 0
+        _t1 = time.perf_counter_ns() if self._profiling_enabled else 0
+
+        profiling = None
+        if self._profiling_enabled:
+            profiling = ProfilingContext(
+                t_kalman_predict_ns=_t_kp1 - _t_kp0,
+                t_camshift_measure_ns=_t_cs1 - _t_cs0,
+                t_gating_ns=_t_g1 - _t_g0,
+                t_kalman_update_ns=_t_ku1 - _t_ku0,
+                t_one_euro_ns=_t_oe1 - _t_oe0,
+                t_total_tracking_ns=_t1 - _t0,
+            )
 
         return TrackingStepResult(
             mode=self.mode,
@@ -148,6 +172,7 @@ class HandTracker:
             frames_since_reinit=self.frames_since_reinit,
             confidence=z_t.confidence if z_t else 0.0,
             trajectory=list(self.history),
+            profiling=profiling,
         )
 
     def _handle_reinit_result(self, frame: np.ndarray, measurement: Measurement) -> TrackingStepResult:

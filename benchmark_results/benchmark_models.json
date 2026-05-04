@@ -1,0 +1,16 @@
+{
+  "variants": [
+    {
+      "variant": "full",
+      "model_size_mb": 7.46,
+      "detection_rate": 0.95,
+      "bbox_stability_sigma_px": 84.1,
+      "n_frames": 80,
+      "n_detected": 76,
+      "inference_mean_ms": 23.55,
+      "inference_p50_ms": 23.11,
+      "inference_p95_ms": 29.22,
+      "inference_std_ms": 3.15
+    }
+  ]
+}

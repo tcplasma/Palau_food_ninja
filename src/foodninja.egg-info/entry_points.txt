@@ -1,0 +1,2 @@
+[console_scripts]
+foodninja-bench = foodninja.benchmark.runner:main

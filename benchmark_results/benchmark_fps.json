@@ -1,0 +1,45 @@
+{
+  "gpu": {
+    "cuda_available": false,
+    "opencl_available": false,
+    "note": "CUDA not available (AMD Radeon integrated GPU). All benchmarks run on CPU. For NVIDIA GPU benchmarks, install opencv-contrib-python with CUDA build."
+  },
+  "results": [
+    {
+      "n_frames": 450,
+      "mean_fps": 292.87,
+      "p50_ms": 3.377,
+      "p95_ms": 4.143,
+      "p99_ms": 4.484,
+      "std_ms": 0.365,
+      "min_ms": 2.779,
+      "max_ms": 5.13,
+      "path": "camshift_only",
+      "description": "CamShift colour-histogram measure (CPU)"
+    },
+    {
+      "n_frames": 450,
+      "mean_fps": 235.1,
+      "p50_ms": 4.321,
+      "p95_ms": 4.922,
+      "p99_ms": 5.171,
+      "std_ms": 0.385,
+      "min_ms": 3.143,
+      "max_ms": 5.804,
+      "path": "kalman_camshift",
+      "description": "Kalman predict + CamShift + Gating + Kalman update (CPU)"
+    },
+    {
+      "n_frames": 450,
+      "mean_fps": 368.8,
+      "p50_ms": 4.269,
+      "p95_ms": 5.61,
+      "p99_ms": 6.174,
+      "std_ms": 0.97,
+      "min_ms": 0.065,
+      "max_ms": 7.181,
+      "path": "full_pipeline",
+      "description": "Full HandTracker pipeline (CPU, excl. async MediaPipe)"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Optional
 
 
 class TrackMode(str, Enum):
@@ -89,6 +90,23 @@ class SearchWindow:
     height: float
 
 
+@dataclass
+class ProfilingContext:
+    """Per-frame timing data collected by the benchmark harness.
+
+    All values are nanoseconds from ``time.perf_counter_ns()``.
+    Fields default to 0 (unmeasured).
+    """
+    t_kalman_predict_ns: int = 0
+    t_camshift_measure_ns: int = 0
+    t_gating_ns: int = 0
+    t_kalman_update_ns: int = 0
+    t_one_euro_ns: int = 0
+    t_total_tracking_ns: int = 0
+    t_game_update_ns: int = 0
+    t_render_ns: int = 0
+
+
 @dataclass(slots=True)
 class TrackingStepResult:
     mode: TrackMode
@@ -98,6 +116,7 @@ class TrackingStepResult:
     frames_since_reinit: int
     confidence: float = 0.0
     trajectory: list[tuple[float, float]] = field(default_factory=list)
+    profiling: Optional["ProfilingContext"] = field(default=None, compare=False)
 
 
 @dataclass(slots=True)

@@ -28,6 +28,15 @@ vision = [
 packaging = [
   "pyinstaller>=6.0"
 ]
+benchmark = [
+  "matplotlib>=3.9",
+  "onnx>=1.16",
+  "onnxruntime>=1.18",
+  "rich>=13.0",
+]
+
+[project.scripts]
+foodninja-bench = "foodninja.benchmark.runner:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
